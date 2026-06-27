@@ -19,7 +19,7 @@ All five share a common library: drivers (`CAN`, `UART`, `I2C`, `SPI`, `AnalogIn
 
 ## Why I built it
 
-The aim was to own the OS layer instead of treating FreeRTOS as a black box. Wrapping raw RTOS calls in C++ types (`Thread::start()`, message queues, RAII locks) requires reasoning concretely about task priorities, shared peripherals, and timing budget, and it lets application code on each board read as plain concurrent tasks rather than scattered FreeRTOS boilerplate. On a multi-board vehicle where any board can stall the bus, that discipline matters.
+I wanted to own the OS layer, not treat FreeRTOS as a black box. Wrapping the raw RTOS calls in C++ types (`Thread::start()`, message queues, RAII locks) forces you to be explicit about priorities, shared peripherals, and timing budget, and it lets each board's code read as plain concurrent tasks instead of FreeRTOS boilerplate. On a vehicle where any board can stall the shared bus, that discipline matters.
 
 ## Architecture
 
@@ -47,9 +47,9 @@ Each board's `main.cpp` instantiates drivers and `Thread`s, registers CAN messag
 
 ## Key design decisions
 
-- **One shared driver and RTOS layer across five different boards.** This keeps the codebase coherent and testable, at the cost of each board carrying some abstraction it does not strictly need. The tradeoff favors maintainability on a student team with rotating membership.
-- **Thin C++ wrappers over FreeRTOS rather than a from-scratch scheduler.** This keeps FreeRTOS's proven scheduler while giving application code typed concurrency primitives.
-- **COBS framing on UART logging.** This trades a couple of bytes per frame for unambiguous packet boundaries, so a glitch does not desync the whole log stream.
+- **One shared driver and RTOS layer across five different boards.** Coherent and testable, at the cost of each board carrying some abstraction it doesn't strictly need. The tradeoff favors maintainability on a student team with rotating membership.
+- **Thin C++ wrappers over FreeRTOS, not a from-scratch scheduler.** Keep FreeRTOS's proven scheduler; add typed concurrency primitives on top.
+- **COBS framing on UART logging.** A couple of bytes per frame buys unambiguous packet boundaries, so a glitch doesn't desync the whole log stream.
 
 ## Tech stack
 

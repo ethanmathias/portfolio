@@ -18,7 +18,7 @@ My contribution ([commit `dce0392`](https://github.com/Archibald-Corp/archibald-
 
 ## Why I built it
 
-The goal was to learn a production motor-control firmware from the inside rather than treat it as a black box. Bringing up a new sensor end to end, from datasheet to a real-time driver to trusted feedback into commutation, is a direct way to learn where the real constraints (timing, noise, framing, failure modes) live. Integrating behind moteus's existing abstractions, modeled on its AksIM-2 driver, kept the work portable and reviewable.
+I wanted to see a production motor-control firmware from the inside. Bringing a new sensor up end to end, from datasheet to trusted feedback in commutation, is the fastest way to find where the real constraints (timing, noise, framing, failure modes) actually are. Working behind moteus's existing abstractions, like its AksIM-2 driver, kept the change reviewable instead of a bolt-on.
 
 ## How it works
 
@@ -50,9 +50,9 @@ This prevents noise or an unplugged encoder from feeding bad position into commu
 
 ## Key design decisions
 
-- **Polling state machine in the ISR rather than a background task.** Keeping it in the control ISR guarantees fresh position every loop with deterministic latency, at the cost of strict non-blocking discipline, which the timeout and resync logic enforces.
-- **Validator separate from decoder.** This keeps the wire protocol (`mosrac_s.h`) independent from the trust policy (`mosrac_s_validator.h`), so the consistency thresholds can be tuned without touching the driver.
-- **Reuse of moteus conventions.** Following the AksIM-2 pattern made the change idiomatic within the upstream firmware rather than a bolt-on.
+- **Polling state machine in the ISR, not a background task.** Fresh position every control loop with deterministic latency, paid for with strict non-blocking discipline that the timeout and resync logic enforces.
+- **Validator separate from the decoder.** The wire protocol (`mosrac_s.h`) stays independent of the trust policy (`mosrac_s_validator.h`), so I can retune the consistency thresholds without touching the driver.
+- **Built on moteus conventions.** Following the AksIM-2 pattern kept the change idiomatic to the upstream firmware.
 
 ## Tech stack
 
