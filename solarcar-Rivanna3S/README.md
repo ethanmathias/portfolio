@@ -1,12 +1,12 @@
-# solarcar-Rivanna3S: UVA Solar Car embedded firmware
+# solarcar-Rivanna3S
 
-Embedded firmware for UVA Solar Car's Rivanna3S platform: five STM32G4 boards that coordinate over CAN, running shared C++ drivers on top of a custom FreeRTOS abstraction layer.
+Embedded firmware for UVA Solar Car's Rivanna3S platform, five STM32G4 boards that coordinate over CAN, running shared C++ drivers on top of a custom FreeRTOS abstraction layer.
 
-Upstream: [solarcaratuva/Rivanna3S](https://github.com/solarcaratuva/Rivanna3S). This README documents the architecture and my work on the shared driver and RTOS layer.
+Upstream is [solarcaratuva/Rivanna3S](https://github.com/solarcaratuva/Rivanna3S). This README documents the architecture and my work on the shared driver and RTOS layer.
 
 ## What it is
 
-Rivanna3S is a distributed embedded system. Each subsystem runs on its own STM32G474 board and communicates with the others over a shared CAN bus:
+Rivanna3S is a distributed embedded system. Each subsystem runs on its own STM32G474 board and communicates with the others over a shared CAN bus.
 
 | Board | Responsibility |
 |-------|----------------|
@@ -15,7 +15,7 @@ Rivanna3S is a distributed embedded system. Each subsystem runs on its own STM32
 | `TopDistBoard`, `BottomDistBoard` | Power distribution |
 | `TelemetryBoard` | Logging and off-vehicle telemetry |
 
-All five share a common library: drivers (`CAN`, `UART`, `I2C`, `SPI`, `AnalogIn`/`ScaledAnalogIn`, `DigitalIn`/`DigitalOut`), CAN message serialization and deserialization, and a FreeRTOS abstraction layer (`Thread`, `MessageQueue`, `lock`, `Timeout`, `Clock`).
+All five share a common library, with drivers (`CAN`, `UART`, `I2C`, `SPI`, `AnalogIn`/`ScaledAnalogIn`, `DigitalIn`/`DigitalOut`), CAN message serialization and deserialization, and a FreeRTOS abstraction layer (`Thread`, `MessageQueue`, `lock`, `Timeout`, `Clock`).
 
 ## Why I built it
 
@@ -25,9 +25,9 @@ I wanted to own the OS layer, not treat FreeRTOS as a black box. Wrapping the ra
 
 ```mermaid
 flowchart TB
-    subgraph Shared["Common: shared across all boards"]
-        RTOS["RTOS abstraction: Thread, MessageQueue, lock, Timeout"]
-        Drv["Drivers: CAN, UART (COBS), I2C, SPI, AnalogIn"]
+    subgraph Shared["Common, shared across all boards"]
+        RTOS["RTOS abstraction<br/>Thread, MessageQueue, lock, Timeout"]
+        Drv["Drivers<br/>CAN, UART (COBS), I2C, SPI, AnalogIn"]
         Msg["CAN struct serialization"]
     end
     Motor[MotorBoard]
@@ -36,7 +36,7 @@ flowchart TB
     Bottom[BottomDistBoard]
     Telem[TelemetryBoard]
     Shared --> Motor & Relay & Top & Bottom & Telem
-    Motor <--> CAN[(CAN bus: Main + Motor networks)]
+    Motor <--> CAN[(CAN bus, Main + Motor networks)]
     Relay <--> CAN
     Top <--> CAN
     Bottom <--> CAN
@@ -53,27 +53,27 @@ Each board's `main.cpp` instantiates drivers and `Thread`s, registers CAN messag
 
 ## Tech stack
 
-- **MCU:** STM32G474RET6 (Cortex-M4)
-- **Languages:** C++ (firmware), Python (build and flash tooling)
-- **RTOS:** FreeRTOS, behind a custom C++ abstraction layer
-- **Interfaces:** CAN (Main and Motor networks), UART (COBS), I2C, SPI, analog
-- **Build:** CMake, Ninja, `arm-gcc`, containerized with Docker
-- **Flash:** STM32CubeProgrammer CLI over SWD
-- **Bench validation:** Analog Discovery (signal-integrity and bus verification)
+- **MCU** &nbsp; STM32G474RET6 (Cortex-M4)
+- **Languages** &nbsp; C++ (firmware), Python (build and flash tooling)
+- **RTOS** &nbsp; FreeRTOS, behind a custom C++ abstraction layer
+- **Interfaces** &nbsp; CAN (Main and Motor networks), UART (COBS), I2C, SPI, analog
+- **Build** &nbsp; CMake, Ninja, `arm-gcc`, containerized with Docker
+- **Flash** &nbsp; STM32CubeProgrammer CLI over SWD
+- **Bench validation** &nbsp; Analog Discovery (signal-integrity and bus verification)
 
 ## Build and run
 
-The build runs in a Docker container so the toolchain is reproducible:
+The build runs in a Docker container so the toolchain is reproducible.
 
 ```bash
-# first-time setup: create the compile container
+# first-time setup, create the compile container
 python compile.py --install
 
-# compile all boards (default MCU: STM32G474RET6)
+# compile all boards (default MCU STM32G474RET6)
 python compile.py
 
 # flash a specific board over SWD (for example the motor board)
-python upload.py motor      # boards: motor, relay, topdist, bottomdist, telemetry
+python upload.py motor      # boards are motor, relay, topdist, bottomdist, telemetry
 
 # monitor logs over UART
 python monitor.py
@@ -86,10 +86,10 @@ See the team wiki ([solarcaratuva.github.io](https://solarcaratuva.github.io/)) 
 - Verified bus signal integrity on real hardware with an Analog Discovery rather than assuming clean CAN and UART lines.
 - A separate [CAN Message Logger](https://github.com/solarcaratuva/CANMessageLogger) tool is used for bus-level logging, debugging, and analysis.
 
-<!-- TODO: add specifics if you want them: CAN bitrate (MotorBoard configures 250 kbps), measured timing/jitter, ringing or termination findings from the Analog Discovery captures, and which boards you personally brought up. -->
+<!-- TODO add specifics if you want them, for example CAN bitrate (MotorBoard configures 250 kbps), measured timing/jitter, ringing or termination findings from the Analog Discovery captures, and which boards you personally brought up. -->
 
 ## Results and status
 
-<!-- TODO: confirm deployment status, for example boards running on the vehicle, race or event participation, and number of concurrent tasks per board. State only what you can back up. -->
+<!-- TODO confirm deployment status, for example boards running on the vehicle, race or event participation, and number of concurrent tasks per board. State only what you can back up. -->
 
-Contact: ethanmathias@gmail.com
+**Contact** &nbsp; ethanmathias@gmail.com
