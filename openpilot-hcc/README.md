@@ -22,14 +22,9 @@ Plenty of controllers look fine in a simulator and come apart on hardware. I wan
 
 ## The controller
 
-`selfdrive/controls/lib/hccc_controller.py`. A time-headway spacing law (`t_h = 1.5 s`, `beta = 0.65`) plus a lead-lag feedforward on the lead's acceleration, tuned against a BeamNG reference.
+`selfdrive/controls/lib/hccc_controller.py`. The controller holds a fixed time-headway gap to the lead, about 1.5 seconds of following distance, and adds a feedforward term from the lead's acceleration so it starts reacting as the lead changes speed instead of waiting for the gap to open or close. It was tuned against a BeamNG reference.
 
-```
-a_cmd = beta*(v_lead - v_ego) + F(s)*a_lead
-F(s)  = (tau*s + (1 - beta*th_bar)) / (th_bar*s + 1)
-```
-
-`controlsd` sits in the real-time path and I didn't want SciPy in it. So I worked out the bilinear (Tustin) discretization of `F(s)` by hand and run it as a three-tap difference equation with scalar state, `y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1]`.
+To keep the real-time control process light, the feedforward filter is implemented in closed form, so the loop doesn't pull in a heavy math library.
 
 ## Architecture and the test ladder
 
