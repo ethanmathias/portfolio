@@ -1,34 +1,34 @@
-# solarcar-Rivanna3S — UVA Solar Car embedded firmware
+# solarcar-Rivanna3S: UVA Solar Car embedded firmware
 
-Embedded firmware for **UVA Solar Car's Rivanna3S** platform: five **STM32G4** boards that coordinate over **CAN**, running shared C++ drivers on top of a custom **FreeRTOS abstraction layer**.
+Embedded firmware for UVA Solar Car's Rivanna3S platform: five STM32G4 boards that coordinate over CAN, running shared C++ drivers on top of a custom FreeRTOS abstraction layer.
 
-> Upstream: [solarcaratuva/Rivanna3S](https://github.com/solarcaratuva/Rivanna3S). This README documents the architecture and my work on the shared driver / RTOS layer.
+Upstream: [solarcaratuva/Rivanna3S](https://github.com/solarcaratuva/Rivanna3S). This README documents the architecture and my work on the shared driver and RTOS layer.
 
 ## What it is
 
-Rivanna3S is a distributed embedded system. Each subsystem runs on its own STM32G474 board and talks to the others over a shared CAN bus:
+Rivanna3S is a distributed embedded system. Each subsystem runs on its own STM32G474 board and communicates with the others over a shared CAN bus:
 
 | Board | Responsibility |
 |-------|----------------|
-| `MotorBoard` | Throttle/regen, motor-controller interface, cruise control |
-| `RelayBoard` | Contactor / relay control |
-| `TopDistBoard` / `BottomDistBoard` | Power distribution |
-| `TelemetryBoard` | Logging / off-vehicle telemetry |
+| `MotorBoard` | Throttle and regen, motor-controller interface, cruise control |
+| `RelayBoard` | Contactor and relay control |
+| `TopDistBoard`, `BottomDistBoard` | Power distribution |
+| `TelemetryBoard` | Logging and off-vehicle telemetry |
 
-All five share a common library: drivers (`CAN`, `UART`, `I²C`, `SPI`, `AnalogIn`/`ScaledAnalogIn`, `DigitalIn/Out`), CAN message (de)serialization, and a **FreeRTOS abstraction layer** (`Thread`, `MessageQueue`, `lock`, `Timeout`, `Clock`).
+All five share a common library: drivers (`CAN`, `UART`, `I2C`, `SPI`, `AnalogIn`/`ScaledAnalogIn`, `DigitalIn`/`DigitalOut`), CAN message serialization and deserialization, and a FreeRTOS abstraction layer (`Thread`, `MessageQueue`, `lock`, `Timeout`, `Clock`).
 
 ## Why I built it
 
-I wanted to own the OS layer instead of treating FreeRTOS as a black box. Wrapping raw RTOS calls in C++ types (`Thread::start()`, message queues, RAII locks) forced me to reason concretely about task priorities, shared peripherals, and timing budget — and it makes application code on each board read as plain concurrent tasks rather than scattered FreeRTOS boilerplate. On a multi-board vehicle where any board can stall the bus, that discipline matters.
+The aim was to own the OS layer instead of treating FreeRTOS as a black box. Wrapping raw RTOS calls in C++ types (`Thread::start()`, message queues, RAII locks) requires reasoning concretely about task priorities, shared peripherals, and timing budget, and it lets application code on each board read as plain concurrent tasks rather than scattered FreeRTOS boilerplate. On a multi-board vehicle where any board can stall the bus, that discipline matters.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Shared["Common/ — shared across all boards"]
-        RTOS["RTOS abstraction: Thread · MessageQueue · lock · Timeout"]
-        Drv["Drivers: CAN · UART(COBS) · I2C · SPI · AnalogIn"]
-        Msg["CAN struct (de)serialization"]
+    subgraph Shared["Common: shared across all boards"]
+        RTOS["RTOS abstraction: Thread, MessageQueue, lock, Timeout"]
+        Drv["Drivers: CAN, UART (COBS), I2C, SPI, AnalogIn"]
+        Msg["CAN struct serialization"]
     end
     Motor[MotorBoard]
     Relay[RelayBoard]
@@ -43,25 +43,25 @@ flowchart TB
     Telem <--> CAN
 ```
 
-Each board's `main.cpp` instantiates drivers and `Thread`s, registers CAN message handlers, and starts the scheduler. Two logical CAN networks (`Main` and `Motor`) are separated at the `CanInterface` level. Host logging uses **COBS-framed UART** (`UartCobs` / `Cobs`) so log frames stay recoverable on a noisy line.
+Each board's `main.cpp` instantiates drivers and `Thread`s, registers CAN message handlers, and starts the scheduler. Two logical CAN networks (`Main` and `Motor`) are separated at the `CanInterface` level. Host logging uses COBS-framed UART (`UartCobs`, `Cobs`) so log frames stay recoverable on a noisy line.
 
-### Key design decisions / tradeoffs
+## Key design decisions
 
-- **One shared driver + RTOS layer across five different boards** — keeps the codebase coherent and testable, at the cost of each board carrying some abstraction it doesn't strictly need. Worth it for maintainability on a student team with rotating membership.
-- **Thin C++ wrappers over FreeRTOS, not a from-scratch scheduler** — keeps FreeRTOS's proven scheduler while giving application code clean, typed concurrency primitives.
-- **COBS framing on UART logging** — trades a couple of bytes per frame for unambiguous packet boundaries, so a glitch doesn't desync the whole log stream.
+- **One shared driver and RTOS layer across five different boards.** This keeps the codebase coherent and testable, at the cost of each board carrying some abstraction it does not strictly need. The tradeoff favors maintainability on a student team with rotating membership.
+- **Thin C++ wrappers over FreeRTOS rather than a from-scratch scheduler.** This keeps FreeRTOS's proven scheduler while giving application code typed concurrency primitives.
+- **COBS framing on UART logging.** This trades a couple of bytes per frame for unambiguous packet boundaries, so a glitch does not desync the whole log stream.
 
 ## Tech stack
 
 - **MCU:** STM32G474RET6 (Cortex-M4)
-- **Languages:** C++ (firmware), Python (build/flash tooling)
+- **Languages:** C++ (firmware), Python (build and flash tooling)
 - **RTOS:** FreeRTOS, behind a custom C++ abstraction layer
-- **Interfaces:** CAN (Main + Motor networks), UART (COBS), I²C, SPI, analog
-- **Build:** CMake + Ninja + `arm-gcc`, containerized with Docker
+- **Interfaces:** CAN (Main and Motor networks), UART (COBS), I2C, SPI, analog
+- **Build:** CMake, Ninja, `arm-gcc`, containerized with Docker
 - **Flash:** STM32CubeProgrammer CLI over SWD
-- **Bench validation:** Analog Discovery (signal-integrity / bus verification)
+- **Bench validation:** Analog Discovery (signal-integrity and bus verification)
 
-## Build / run
+## Build and run
 
 The build runs in a Docker container so the toolchain is reproducible:
 
@@ -72,25 +72,24 @@ python compile.py --install
 # compile all boards (default MCU: STM32G474RET6)
 python compile.py
 
-# flash a specific board over SWD (e.g. the motor board)
-python upload.py motor      # boards: motor | relay | topdist | bottomdist | telemetry
+# flash a specific board over SWD (for example the motor board)
+python upload.py motor      # boards: motor, relay, topdist, bottomdist, telemetry
 
 # monitor logs over UART
 python monitor.py
 ```
 
-See the team wiki ([solarcaratuva.github.io](https://solarcaratuva.github.io/)) for the full compile/upload/monitor guide.
+See the team wiki ([solarcaratuva.github.io](https://solarcaratuva.github.io/)) for the full compile, upload, and monitor guide.
 
 ## Validation
 
-- Verified **bus signal integrity on real hardware with an Analog Discovery** rather than assuming clean CAN/UART lines.
+- Verified bus signal integrity on real hardware with an Analog Discovery rather than assuming clean CAN and UART lines.
 - A separate [CAN Message Logger](https://github.com/solarcaratuva/CANMessageLogger) tool is used for bus-level logging, debugging, and analysis.
 
-<!-- TODO: add specifics if you want them — CAN bitrate you ran (MotorBoard configures 250 kbps), measured timing/jitter, any ringing/termination findings from the Analog Discovery captures, and which boards you personally brought up. -->
+<!-- TODO: add specifics if you want them: CAN bitrate (MotorBoard configures 250 kbps), measured timing/jitter, ringing or termination findings from the Analog Discovery captures, and which boards you personally brought up. -->
 
-## Results / status
+## Results and status
 
-<!-- TODO: confirm deployment status — e.g. boards running on the vehicle, race/event participation, number of concurrent tasks per board. State only what you can back up. -->
+<!-- TODO: confirm deployment status, for example boards running on the vehicle, race or event participation, and number of concurrent tasks per board. State only what you can back up. -->
 
----
-📫 ethanmathias@gmail.com
+Contact: ethanmathias@gmail.com
