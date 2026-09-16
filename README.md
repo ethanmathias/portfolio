@@ -12,7 +12,7 @@ Computer Engineering at the University of Virginia (expected 2028), focused on e
 
 ### 1. [archibald-moteus](archibald-moteus/)
 
-**Real-time STM32 encoder driver for a servo actuator.**
+**Real-time encoder driver for a servo actuator.**
 
 An absolute-encoder driver in the open-source [moteus](https://github.com/mjbots/moteus) motor-controller firmware (STM32G4). I added support for the Mosrac S 17-bit absolute magnetic encoder, an ISR-driven, DMA-backed RS422/UART driver that polls the encoder and decodes its frames inside the real-time control loop, behind moteus's `aux_port` abstraction like its existing AksIM-2 driver.
 
