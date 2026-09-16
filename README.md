@@ -2,7 +2,7 @@
 
 Embedded / Firmware Engineering
 
-Computer Engineering at the University of Virginia (GPA 4.0, expected 2028), focused on embedded software and firmware.
+Computer Engineering at the University of Virginia (expected 2028), focused on embedded software and firmware.
 
 **Tech** &nbsp; C, C++, Python, STM32 (G4), FreeRTOS and custom RTOS layers, CAN/CAN-FD, UART/RS422, I2C, SPI, analog, ISR-driven drivers, DMA, hardware bring-up, signal-integrity validation (Analog Discovery), Bazel, CMake, Docker.
 
