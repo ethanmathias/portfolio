@@ -8,7 +8,7 @@ Computer Engineering at the University of Virginia (expected 2028), focused on e
 
 **Contact** &nbsp; ethanmathias@gmail.com
 
-## Selected Projects
+## Projects
 
 ### 1. [archibald-moteus](archibald-moteus/)
 
